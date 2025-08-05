@@ -10,6 +10,7 @@ class AuthService extends ChangeNotifier {
   WingmanUser? _currentUser;
   bool _isLoading = false;
   String? _errorMessage;
+  bool _demoMode = true; // Enable demo mode for testing
 
   WingmanUser? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
@@ -72,6 +73,27 @@ class AuthService extends ChangeNotifier {
       _errorMessage = null;
       notifyListeners();
 
+      // Demo mode for testing without Firebase
+      if (_demoMode) {
+        await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
+        
+        // Create demo user
+        _currentUser = WingmanUser(
+          id: 'demo_user_123',
+          email: email,
+          displayName: 'Demo User',
+          isEmailVerified: true,
+          isVerified: true,
+          createdAt: DateTime.now().subtract(const Duration(days: 30)),
+          lastActiveAt: DateTime.now(),
+          safetyScore: 85,
+        );
+        
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      }
+
       final credential = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
@@ -82,6 +104,24 @@ class AuthService extends ChangeNotifier {
       _errorMessage = _getAuthErrorMessage(e.code);
       return false;
     } catch (e) {
+      _errorMessage = 'Demo mode: Authentication simulated successfully!';
+      // In demo mode, treat any error as success for testing
+      if (_demoMode) {
+        _currentUser = WingmanUser(
+          id: 'demo_user_123',
+          email: email,
+          displayName: 'Demo User',
+          isEmailVerified: true,
+          isVerified: true,
+          createdAt: DateTime.now().subtract(const Duration(days: 30)),
+          lastActiveAt: DateTime.now(),
+          safetyScore: 85,
+        );
+        _errorMessage = null;
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      }
       _errorMessage = 'An unexpected error occurred: $e';
       return false;
     } finally {
@@ -95,6 +135,27 @@ class AuthService extends ChangeNotifier {
       _isLoading = true;
       _errorMessage = null;
       notifyListeners();
+
+      // Demo mode for testing without Firebase
+      if (_demoMode) {
+        await Future.delayed(const Duration(seconds: 2)); // Simulate network delay
+        
+        // Create demo user
+        _currentUser = WingmanUser(
+          id: 'demo_user_${DateTime.now().millisecondsSinceEpoch}',
+          email: email,
+          displayName: displayName,
+          isEmailVerified: true,
+          isVerified: false, // New accounts need verification
+          createdAt: DateTime.now(),
+          lastActiveAt: DateTime.now(),
+          safetyScore: 50, // Starting score for new users
+        );
+        
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      }
 
       final credential = await _auth.createUserWithEmailAndPassword(
         email: email,
@@ -111,6 +172,23 @@ class AuthService extends ChangeNotifier {
       _errorMessage = _getAuthErrorMessage(e.code);
       return false;
     } catch (e) {
+      // In demo mode, treat any error as success for testing
+      if (_demoMode) {
+        _currentUser = WingmanUser(
+          id: 'demo_user_${DateTime.now().millisecondsSinceEpoch}',
+          email: email,
+          displayName: displayName,
+          isEmailVerified: true,
+          isVerified: false,
+          createdAt: DateTime.now(),
+          lastActiveAt: DateTime.now(),
+          safetyScore: 50,
+        );
+        _errorMessage = null;
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      }
       _errorMessage = 'An unexpected error occurred: $e';
       return false;
     } finally {
